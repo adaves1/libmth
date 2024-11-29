@@ -1334,3 +1334,622 @@ void aes_decrypt(uint8_t *state, uint8_t *roundKeys) {
     subBytes(state);
     addRoundKey(state, roundKeys); // Initial round key
 }
+
+__declspec(dllexport) void rotate_point(float x, float y, float angle, float* x_out, float* y_out) {
+    float radians = angle * M_PI / 180.0f;  // Convert angle to radians
+    *x_out = x * cos(radians) - y * sin(radians);
+    *y_out = x * sin(radians) + y * cos(radians);
+}
+
+__declspec(dllexport) void dfs(int graph[5][5], int start, bool* visited, int num_vertices) {
+    visited[start] = true;
+    for (int v = 0; v < num_vertices; v++) {
+        if (graph[start][v] != 0 && !visited[v]) {
+            dfs(graph, v, visited, num_vertices);
+        }
+    }
+}
+
+__declspec(dllexport) void moving_average(float* data, int data_size, int window_size, float* output) {
+    for (int i = 0; i <= data_size - window_size; i++) {
+        float sum = 0;
+        for (int j = 0; j < window_size; j++) {
+            sum += data[i + j];
+        }
+        output[i] = sum / window_size;
+    }
+}
+
+static int compare(const void* a, const void* b) {
+    float fa = *(const float*)a;
+    float fb = *(const float*)b;
+    return (fa > fb) - (fa < fb);
+}
+
+__declspec(dllexport) float find_median(float* arr, int size) {
+    qsort(arr, size, sizeof(float), compare);
+    if (size % 2 == 0) {
+        return (arr[size / 2 - 1] + arr[size / 2]) / 2.0f;
+    } else {
+        return arr[size / 2];
+    }
+}
+
+__declspec(dllexport) void prims_mst(int graph[5][5], int num_vertices, int* parent) {
+    int key[5];
+    bool mst_set[5] = { false };
+
+    for (int i = 0; i < num_vertices; i++) {
+        key[i] = INT_MAX;
+        parent[i] = -1;
+    }
+    key[0] = 0;
+
+    for (int count = 0; count < num_vertices - 1; count++) {
+        int min = INT_MAX, u = -1;
+
+        for (int v = 0; v < num_vertices; v++) {
+            if (!mst_set[v] && key[v] < min) {
+                min = key[v];
+                u = v;
+            }
+        }
+
+        mst_set[u] = true;
+
+        for (int v = 0; v < num_vertices; v++) {
+            if (graph[u][v] && !mst_set[v] && graph[u][v] < key[v]) {
+                parent[v] = u;
+                key[v] = graph[u][v];
+            }
+        }
+    }
+}
+
+__declspec(dllexport) float chi_squared(float* observed, float* expected, int size) {
+    float chi_sq = 0;
+    for (int i = 0; i < size; i++) {
+        if (expected[i] != 0) {
+            float diff = observed[i] - expected[i];
+            chi_sq += (diff * diff) / expected[i];
+        }
+    }
+    return chi_sq;
+}
+
+__declspec(dllexport) void reflect_point(float x, float y, float x_ref, float y_ref, float* x_out, float* y_out) {
+    *x_out = 2 * x_ref - x;
+    *y_out = 2 * y_ref - y;
+}
+
+__declspec(dllexport) void vector_cross_product(float* vec1, float* vec2, float* result) {
+    result[0] = vec1[1] * vec2[2] - vec1[2] * vec2[1];
+    result[1] = vec1[2] * vec2[0] - vec1[0] *
+
+}
+
+__declspec(dllexport) int invert_matrix_2x2(float matrix[2][2], float inverse[2][2]) {
+    float det = matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
+    if (det == 0) {
+        return 0;  // Not invertible
+    }
+
+    float inv_det = 1.0f / det;
+    inverse[0][0] = matrix[1][1] * inv_det;
+    inverse[0][1] = -matrix[0][1] * inv_det;
+    inverse[1][0] = -matrix[1][0] * inv_det;
+    inverse[1][1] = matrix[0][0] * inv_det;
+
+    return 1;  // Success
+}
+
+__declspec(dllexport) int gaussian_elimination(float** matrix, float* results, int n) {
+    for (int i = 0; i < n; i++) {
+        // Make the diagonal element 1
+        float pivot = matrix[i][i];
+        if (pivot == 0) return 0;  // Singular matrix
+
+        for (int j = i; j <= n; j++) {
+            matrix[i][j] /= pivot;
+        }
+
+        // Make the other rows 0 in the current column
+        for (int k = 0; k < n; k++) {
+            if (k != i) {
+                float factor = matrix[k][i];
+                for (int j = i; j <= n; j++) {
+                    matrix[k][j] -= factor * matrix[i][j];
+                }
+            }
+        }
+    }
+
+    for (int i = 0; i < n; i++) {
+        results[i] = matrix[i][n];
+    }
+
+    return 1;  // Success
+}
+
+__declspec(dllexport) float distance_3d(float x1, float y1, float z1, float x2, float y2, float z2) {
+    float dx = x2 - x1;
+    float dy = y2 - y1;
+    float dz = z2 - z1;
+    return sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+__declspec(dllexport) float bilinear_interpolation(float x, float y, float* grid, int width) {
+    int x0 = (int)x, y0 = (int)y;
+    int x1 = x0 + 1, y1 = y0 + 1;
+
+    float dx = x - x0;
+    float dy = y - y0;
+
+    float f00 = grid[y0 * width + x0];
+    float f01 = grid[y1 * width + x0];
+    float f10 = grid[y0 * width + x1];
+    float f11 = grid[y1 * width + x1];
+
+    return (1 - dx) * (1 - dy) * f00 +
+           (1 - dx) * dy * f01 +
+           dx * (1 - dy) * f10 +
+           dx * dy * f11;
+}
+
+__declspec(dllexport) int lu_decomposition(float** matrix, float** lower, float** upper, int n) {
+    for (int i = 0; i < n; i++) {
+        // Upper Triangular
+        for (int k = i; k < n; k++) {
+            float sum = 0;
+            for (int j = 0; j < i; j++) {
+                sum += (lower[i][j] * upper[j][k]);
+            }
+            upper[i][k] = matrix[i][k] - sum;
+        }
+
+        // Lower Triangular
+        for (int k = i; k < n; k++) {
+            if (i == k) {
+                lower[i][i] = 1;  // Diagonal as 1
+            } else {
+                float sum = 0;
+                for (int j = 0; j < i; j++) {
+                    sum += (lower[k][j] * upper[j][i]);
+                }
+                lower[k][i] = (matrix[k][i] - sum) / upper[i][i];
+            }
+        }
+    }
+    return 1;  // Success
+}
+
+__declspec(dllexport) int hamming_distance(int x, int y) {
+    int xor_result = x ^ y;
+    int count = 0;
+    while (xor_result) {
+        count += xor_result & 1;
+        xor_result >>= 1;
+    }
+    return count;
+}
+
+__declspec(dllexport) float hermite_polynomial(int n, float x) {
+    if (n == 0) return 1.0f;
+    if (n == 1) return 2.0f * x;
+    return 2.0f * x * hermite_polynomial(n - 1, x) - 2.0f * (n - 1) * hermite_polynomial(n - 2, x);
+}
+
+__declspec(dllexport) int levenshtein_distance(const char* s1, const char* s2) {
+    int len1 = strlen(s1);
+    int len2 = strlen(s2);
+    int dp[len1 + 1][len2 + 1];
+
+    for (int i = 0; i <= len1; i++) dp[i][0] = i;
+    for (int j = 0; j <= len2; j++) dp[0][j] = j;
+
+    for (int i = 1; i <= len1; i++) {
+        for (int j = 1; j <= len2; j++) {
+            int cost = (s1[i - 1] == s2[j - 1]) ? 0 : 1;
+            dp[i][j] = fmin(dp[i - 1][j] + 1, fmin(dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost));
+        }
+    }
+    return dp[len1][len2];
+}
+
+__declspec(dllexport) float gradient_descent(float a, float b, float c, float alpha, int iterations) {
+    float x = 0;  // Start at x = 0
+    for (int i = 0; i < iterations; i++) {
+        float gradient = 2 * a * x + b;  // Derivative of f(x)
+        x -= alpha * gradient;          // Update x using learning rate
+    }
+    return x;
+}
+
+__declspec(dllexport) void calculate_statistics(float* data, int n, float* mean, float* median, float* mode) {
+    // Calculate mean
+    float sum = 0;
+    for (int i = 0; i < n; i++) {
+        sum += data[i];
+    }
+    *mean = sum / n;
+
+    // Calculate median
+    qsort(data, n, sizeof(float), (int(*)(const void*, const void*))strcmp);
+    if (n % 2 == 0) {
+        *median = (data[n / 2 - 1] + data[n / 2]) / 2.0f;
+    } else {
+        *median = data[n / 2];
+    }
+
+    // Calculate mode
+    int max_count = 0;
+    float current_mode = data[0];
+    int count = 1;
+    for (int i = 1; i < n; i++) {
+        if (data[i] == data[i - 1]) {
+            count++;
+        } else {
+            count = 1;
+        }
+        if (count > max_count) {
+            max_count = count;
+            current_mode = data[i];
+        }
+    }
+    *mode = current_mode;
+}
+
+__declspec(dllexport) float matrix_determinant(float** matrix, int n) {
+    if (n == 1) return matrix[0][0];
+
+    float det = 0;
+    float** submatrix = (float**)malloc((n - 1) * sizeof(float*));
+    for (int i = 0; i < n - 1; i++) {
+        submatrix[i] = (float*)malloc((n - 1) * sizeof(float));
+    }
+
+    for (int x = 0; x < n; x++) {
+        int subi = 0;
+        for (int i = 1; i < n; i++) {
+            int subj = 0;
+            for (int j = 0; j < n; j++) {
+                if (j == x) continue;
+                submatrix[subi][subj] = matrix[i][j];
+                subj++;
+            }
+            subi++;
+        }
+        det += (x % 2 == 0 ? 1 : -1) * matrix[0][x] * matrix_determinant(submatrix, n - 1);
+    }
+
+    for (int i = 0; i < n - 1; i++) free(submatrix[i]);
+    free(submatrix);
+
+    return det;
+}
+
+__declspec(dllexport) void cross_product_3d(float* v1, float* v2, float* result) {
+    result[0] = v1[1] * v2[2] - v1[2] * v2[1];
+    result[1] = v1[2] * v2[0] - v1[0] * v2[2];
+    result[2] = v1[0] * v2[1] - v1[1] * v2[0];
+}
+
+__declspec(dllexport) int fast_modular_exponentiation(int base, int exp, int mod) {
+    int result = 1;
+    base %= mod;
+    while (exp > 0) {
+        if (exp % 2 == 1) {
+            result = (result * base) % mod;
+        }
+        exp /= 2;
+        base = (base * base) % mod;
+    }
+    return result;
+}
+
+__declspec(dllexport) void bresenham_line(int x1, int y1, int x2, int y2, int* line_x, int* line_y, int* count) {
+    int dx = abs(x2 - x1);
+    int dy = abs(y2 - y1);
+    int sx = (x1 < x2) ? 1 : -1;
+    int sy = (y1 < y2) ? 1 : -1;
+    int err = dx - dy;
+
+    *count = 0;
+    while (1) {
+        line_x[*count] = x1;
+        line_y[*count] = y1;
+        (*count)++;
+        if (x1 == x2 && y1 == y2) break;
+        int e2 = 2 * err;
+        if (e2 > -dy) {
+            err -= dy;
+            x1 += sx;
+        }
+        if (e2 < dx) {
+            err += dx;
+            y1 += sy;
+        }
+    }
+}
+
+__declspec(dllexport) int matrix_inverse(float** matrix, float** inverse, int n) {
+    float** augmented = (float**)malloc(n * sizeof(float*));
+    for (int i = 0; i < n; i++) {
+        augmented[i] = (float*)malloc(2 * n * sizeof(float));
+        for (int j = 0; j < n; j++) {
+            augmented[i][j] = matrix[i][j];
+            augmented[i][j + n] = (i == j) ? 1 : 0;
+        }
+    }
+
+    for (int i = 0; i < n; i++) {
+        float pivot = augmented[i][i];
+        if (pivot == 0) return 0;  // Singular matrix
+
+        for (int j = 0; j < 2 * n; j++) {
+            augmented[i][j] /= pivot;
+        }
+        for (int k = 0; k < n; k++) {
+            if (k == i) continue;
+            float factor = augmented[k][i];
+            for (int j = 0; j < 2 * n; j++) {
+                augmented[k][j] -= factor * augmented[i][j];
+            }
+        }
+    }
+
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            inverse[i][j] = augmented[i][j + n];
+        }
+        free(augmented[i]);
+    }
+    free(augmented);
+    return 1;  // Success
+}
+
+__declspec(dllexport) float hermite_polynomial(int n, float x) {
+    if (n == 0) return 1;
+    if (n == 1) return 2 * x;
+    return 2 * x * hermite_polynomial(n - 1, x) - 2 * (n - 1) * hermite_polynomial(n - 2, x);
+}
+
+__declspec(dllexport) float newton_raphson(float (*func)(float), float (*deriv)(float), float guess, float tolerance, int max_iter) {
+    int iter = 0;
+    while (iter < max_iter) {
+        float value = func(guess);
+        float slope = deriv(guess);
+        if (fabs(slope) < 1e-7) break;  // Prevent division by zero
+        float next_guess = guess - value / slope;
+        if (fabs(next_guess - guess) < tolerance) return next_guess;
+        guess = next_guess;
+        iter++;
+    }
+    return guess;  // Return last guess if max iterations reached
+}
+
+__declspec(dllexport) void string_permutations(char* str, int l, int r, void (*callback)(const char*)) {
+    if (l == r) {
+        callback(str);
+    } else {
+        for (int i = l; i <= r; i++) {
+            char temp = str[l];
+            str[l] = str[i];
+            str[i] = temp;
+
+            string_permutations(str, l + 1, r, callback);
+
+            temp = str[l];
+            str[l] = str[i];
+            str[i] = temp;
+        }
+    }
+}
+
+__declspec(dllexport) void discrete_fourier_transform(float* real, float* imag, int n) {
+    float* temp_real = (float*)malloc(n * sizeof(float));
+    float* temp_imag = (float*)malloc(n * sizeof(float));
+
+    for (int k = 0; k < n; k++) {
+        temp_real[k] = 0;
+        temp_imag[k] = 0;
+        for (int t = 0; t < n; t++) {
+            float angle = -2.0f * M_PI * k * t / n;
+            temp_real[k] += real[t] * cos(angle) - imag[t] * sin(angle);
+            temp_imag[k] += real[t] * sin(angle) + imag[t] * cos(angle);
+        }
+    }
+
+    for (int i = 0; i < n; i++) {
+        real[i] = temp_real[i];
+        imag[i] = temp_imag[i];
+    }
+
+    free(temp_real);
+    free(temp_imag);
+}
+
+__declspec(dllexport) float logarithm_base(float value, float base) {
+    return log(value) / log(base);
+}
+
+__declspec(dllexport) void quicksort(int* array, int low, int high) {
+    if (low < high) {
+        int pivot = array[high];
+        int i = low - 1;
+        for (int j = low; j < high; j++) {
+            if (array[j] < pivot) {
+                i++;
+                int temp = array[i];
+                array[i] = array[j];
+                array[j] = temp;
+            }
+        }
+        int temp = array[i + 1];
+        array[i + 1] = array[high];
+        array[high] = temp;
+
+        int pi = i + 1;
+        quicksort(array, low, pi - 1);
+        quicksort(array, pi + 1, high);
+    }
+}
+
+__declspec(dllexport) float square(float x) {
+    return x * x;
+}
+
+__declspec(dllexport) float radians_to_degrees(float radians) {
+    return radians * (180.0f / M_PI);
+}
+
+__declspec(dllexport) void reverse_string(char* str) {
+    int n = strlen(str);
+    for (int i = 0; i < n / 2; i++) {
+        char temp = str[i];
+        str[i] = str[n - i - 1];
+        str[n - i - 1] = temp;
+    }
+}
+
+__declspec(dllexport) int word_count(const char* str) {
+    int count = 0;
+    int in_word = 0;
+    for (int i = 0; str[i] != '\0'; i++) {
+        if (str[i] == ' ' || str[i] == '\t' || str[i] == '\n') {
+            in_word = 0;
+        } else if (!in_word) {
+            in_word = 1;
+            count++;
+        }
+    }
+    return count;
+}
+
+__declspec(dllexport) void to_uppercase(char* str) {
+    for (int i = 0; str[i] != '\0'; i++) {
+        if (str[i] >= 'a' && str[i] <= 'z') {
+            str[i] -= 32;
+        }
+    }
+}
+
+__declspec(dllexport) int random_int(int min, int max) {
+    return min + rand() % (max - min + 1);
+}
+
+__declspec(dllexport) void sort_strings(char** strings, int n) {
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = i + 1; j < n; j++) {
+            if (strcmp(strings[i], strings[j]) > 0) {
+                char* temp = strings[i];
+                strings[i] = strings[j];
+                strings[j] = temp;
+            }
+        }
+    }
+}
+
+__declspec(dllexport) int read_file(const char* filename, char* buffer, int buffer_size) {
+    FILE* file = fopen(filename, "r");
+    if (!file) return 0;  // Error opening file
+
+    int i = 0;
+    char c;
+    while ((c = fgetc(file)) != EOF && i < buffer_size - 1) {
+        buffer[i++] = c;
+    }
+    buffer[i] = '\0';
+    fclose(file);
+    return 1;  // Success
+}
+
+__declspec(dllexport) unsigned int crc32(const unsigned char* data, size_t length) {
+    unsigned int crc = 0xFFFFFFFF;
+    for (size_t i = 0; i < length; i++) {
+        unsigned char byte = data[i];
+        crc ^= byte;
+        for (int j = 0; j < 8; j++) {
+            if (crc & 1) {
+                crc = (crc >> 1) ^ 0xEDB88320;
+            } else {
+                crc >>= 1;
+            }
+        }
+    }
+    return ~crc;
+}
+
+__declspec(dllexport) int find_substring(const char* str, const char* substr) {
+    const char* pos = strstr(str, substr);
+    return pos ? (int)(pos - str) : -1;
+}
+
+__declspec(dllexport) int is_palindrome(const char* str) {
+    int left = 0, right = strlen(str) - 1;
+    while (left < right) {
+        if (str[left++] != str[right--]) return 0;
+    }
+    return 1;  // True
+}
+
+__declspec(dllexport) void caesar_cipher(char* str, int shift) {
+    for (int i = 0; str[i] != '\0'; i++) {
+        if (str[i] >= 'a' && str[i] <= 'z') {
+            str[i] = ((str[i] - 'a' + shift) % 26) + 'a';
+        } else if (str[i] >= 'A' && str[i] <= 'Z') {
+            str[i] = ((str[i] - 'A' + shift) % 26) + 'A';
+        }
+    }
+}
+
+__declspec(dllexport) int linear_search(const int* array, int size, int value) {
+    for (int i = 0; i < size; i++) {
+        if (array[i] == value) return i;
+    }
+    return -1;  // Not found
+}
+
+__declspec(dllexport) int binary_search(const int* array, int size, int value) {
+    int low = 0, high = size - 1;
+    while (low <= high) {
+        int mid = (low + high) / 2;
+        if (array[mid] == value) return mid;
+        if (array[mid] < value) low = mid + 1;
+        else high = mid - 1;
+    }
+    return -1;  // Not found
+}
+
+__declspec(dllexport) void rotate_array(int* array, int size, int k) {
+    k %= size;
+    int* temp = (int*)malloc(k * sizeof(int));
+    for (int i = 0; i < k; i++) temp[i] = array[i];
+    for (int i = 0; i < size - k; i++) array[i] = array[i + k];
+    for (int i = 0; i < k; i++) array[size - k + i] = temp[i];
+    free(temp);
+}
+
+__declspec(dllexport) void generate_fibonacci(int* array, int n) {
+    if (n < 1) return;
+    array[0] = 0;
+    if (n == 1) return;
+    array[1] = 1;
+    for (int i = 2; i < n; i++) {
+        array[i] = array[i - 1] + array[i - 2];
+    }
+}
+
+__declspec(dllexport) int count_lines(const char* filename) {
+    FILE* file = fopen(filename, "r");
+    if (!file) return -1;  // Error
+    int count = 0;
+    char c;
+    while ((c = fgetc(file)) != EOF) {
+        if (c == '\n') count++;
+    }
+    fclose(file);
+    return count;
+}
+
+
