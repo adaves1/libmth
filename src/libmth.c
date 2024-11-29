@@ -1118,55 +1118,6 @@ __declspec(dllexport) void bin_matrix_multiply(int* A, int* B, int* C, int n) {
     }
 }
 
-// Gaussian Elimination for solving a system of linear equations (Matrix Inversion)
-__declspec(dllexport) int gaussian_elimination(float* matrix, float* inverse, int n) {
-    float temp;
-    for (int i = 0; i < n; i++) {
-        // Search for maximum in this column
-        int max_row = i;
-        for (int k = i + 1; k < n; k++) {
-            if (fabs(matrix[k * n + i]) > fabs(matrix[max_row * n + i])) {
-                max_row = k;
-            }
-        }
-        
-        // Swap maximum row with current row
-        for (int j = 0; j < n; j++) {
-            temp = matrix[i * n + j];
-            matrix[i * n + j] = matrix[max_row * n + j];
-            matrix[max_row * n + j] = temp;
-        }
-
-        for (int j = 0; j < n; j++) {
-            temp = inverse[i * n + j];
-            inverse[i * n + j] = inverse[max_row * n + j];
-            inverse[max_row * n + j] = temp;
-        }
-
-        // Make all rows below this one 0 in current column
-        for (int k = i + 1; k < n; k++) {
-            float factor = matrix[k * n + i] / matrix[i * n + i];
-            for (int j = i; j < n; j++) {
-                matrix[k * n + j] -= matrix[i * n + j] * factor;
-            }
-            for (int j = 0; j < n; j++) {
-                inverse[k * n + j] -= inverse[i * n + j] * factor;
-            }
-        }
-    }
-
-    // Solve for the inverse matrix
-    for (int i = n - 1; i >= 0; i--) {
-        for (int j = n - 1; j >= 0; j--) {
-            if (i != j) {
-                inverse[i * n + j] /= matrix[i * n + i];
-            }
-        }
-    }
-
-    return 0;
-}
-
 // Cholesky Decomposition: A = L * L^T
 __declspec(dllexport) int cholesky_decomposition(float* matrix, float* L, int n) {
     for (int i = 0; i < n; i++) {
@@ -1424,9 +1375,10 @@ __declspec(dllexport) void reflect_point(float x, float y, float x_ref, float y_
 
 __declspec(dllexport) void vector_cross_product(float* vec1, float* vec2, float* result) {
     result[0] = vec1[1] * vec2[2] - vec1[2] * vec2[1];
-    result[1] = vec1[2] * vec2[0] - vec1[0] *
-
+    result[1] = vec1[2] * vec2[0] - vec1[0] * vec2[2];
+    result[2] = vec1[0] * vec2[1] - vec1[1] * vec2[0];
 }
+
 
 __declspec(dllexport) int invert_matrix_2x2(float matrix[2][2], float inverse[2][2]) {
     float det = matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
@@ -1533,11 +1485,6 @@ __declspec(dllexport) int hamming_distance(int x, int y) {
     return count;
 }
 
-__declspec(dllexport) float hermite_polynomial(int n, float x) {
-    if (n == 0) return 1.0f;
-    if (n == 1) return 2.0f * x;
-    return 2.0f * x * hermite_polynomial(n - 1, x) - 2.0f * (n - 1) * hermite_polynomial(n - 2, x);
-}
 
 __declspec(dllexport) int levenshtein_distance(const char* s1, const char* s2) {
     int len1 = strlen(s1);
@@ -1834,10 +1781,6 @@ __declspec(dllexport) void to_uppercase(char* str) {
     }
 }
 
-__declspec(dllexport) int random_int(int min, int max) {
-    return min + rand() % (max - min + 1);
-}
-
 __declspec(dllexport) void sort_strings(char** strings, int n) {
     for (int i = 0; i < n - 1; i++) {
         for (int j = i + 1; j < n; j++) {
@@ -1910,17 +1853,6 @@ __declspec(dllexport) int linear_search(const int* array, int size, int value) {
     return -1;  // Not found
 }
 
-__declspec(dllexport) int binary_search(const int* array, int size, int value) {
-    int low = 0, high = size - 1;
-    while (low <= high) {
-        int mid = (low + high) / 2;
-        if (array[mid] == value) return mid;
-        if (array[mid] < value) low = mid + 1;
-        else high = mid - 1;
-    }
-    return -1;  // Not found
-}
-
 __declspec(dllexport) void rotate_array(int* array, int size, int k) {
     k %= size;
     int* temp = (int*)malloc(k * sizeof(int));
@@ -1951,5 +1883,8 @@ __declspec(dllexport) int count_lines(const char* filename) {
     fclose(file);
     return count;
 }
+
+
+
 
 
